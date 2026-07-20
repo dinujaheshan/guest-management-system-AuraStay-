@@ -21,7 +21,7 @@ export async function GET(req: Request) {
     let csv = "Type,Amount,Date,Description\n";
 
     bookings.forEach(b => {
-      csv += `Booking Revenue,${b.totalAmount},${b.createdAt.toISOString().split('T')[0]},${b.bookingCode}\n`;
+      csv += `Booking Revenue,${b.totalAmount},${b.createdAt.toISOString().split('T')[0]},${b._id.toString()}\n`;
     });
 
     charges.forEach(c => {

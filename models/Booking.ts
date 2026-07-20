@@ -12,6 +12,8 @@ export interface IBooking extends Document {
   advancePayment: number;
   totalAmount: number;
   paymentStatus: "Pending" | "Partially Paid" | "Paid" | "Refunded";
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const BookingSchema = new mongoose.Schema<IBooking>(

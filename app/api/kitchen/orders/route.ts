@@ -18,7 +18,7 @@ export async function GET(req: Request) {
     const _r = Room;
 
     const orders = await FoodOrderItem.find({ status: { $in: ["pending", "served"] } })
-      .populate({ path: "bookingId", select: "bookingCode" })
+      .populate({ path: "bookingId", select: "_id" })
       .populate({ path: "roomId", select: "roomNumber" })
       .sort({ createdAt: 1 });
 

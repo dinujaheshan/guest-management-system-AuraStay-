@@ -7,6 +7,8 @@ export interface ICharge extends Document {
   description: string;
   amount: number;
   status: "Pending" | "Added to Bill" | "Paid";
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const ChargeSchema = new mongoose.Schema<ICharge>(
