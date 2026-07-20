@@ -1,0 +1,46 @@
+import { NextResponse } from "next/server";
+import connectToDatabase from "@/lib/db";
+import { Booking } from "@/models/Booking";
+import { Guest } from "@/models/Guest";
+import { Room } from "@/models/Room";
+import { RoomPackage } from "@/models/RoomPackage";
+import { Payment } from "@/models/Payment";
+
+export async function GET(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    await connectToDatabase();
+
+    // Explicitly reference models to register them in Mongoose schemas (prevents SchemaNotFound errors)
+    const _g = Guest;
+    const _r = Room;
+    const _rp = RoomPackage;
+    const _p = Payment;
+
+    const bookingId = params.id;
+    if (!bookingId) {
+      return NextResponse.json({ error: "Booking ID is required" }, { status: 400 });
+    }
+
+    const booking = await Booking.findById(bookingId)
+      .populate("guestId")
+      .populate("roomIds")
+      .populate("packageId");
+
+    if (!booking) {
+      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+    }
+
+    const payments = await Payment.find({ bookingId }).sort({ date: 1 });
+
+    return NextResponse.json({
+      booking,
+      payments,
+    });
+  } catch (error: any) {
+    console.error("Public API Error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}

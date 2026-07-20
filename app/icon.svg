@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#000000" floodOpacity="0.15" />
+    </filter>
+  </defs>
+  
+  <!-- Icon Base background (Flat Slate Teal) -->
+  <rect width="100" height="100" rx="28" fill="#0f766e" />
+  
+  <!-- Outer Glow Ring -->
+  <rect x="3" y="3" width="94" height="94" rx="25" stroke="#ffffff" strokeWidth="2" strokeOpacity="0.2" />
+  
+  <!-- Modern Stylized Nest Graphic with Filter -->
+  <g filter="url(#shadow)">
+    <!-- Roof line -->
+    <path d="M50 24 L26 44 L32 49 L50 34 L68 49 L74 44 Z" fill="#ffffff" opacity="0.95" />
+    <!-- Building lines -->
+    <path d="M34 50 L34 74 C34 76 36 78 38 78 L62 78 C64 78 66 76 66 74 L66 50 Z" fill="#ffffff" opacity="0.85" />
+    <!-- Door arch (Solid background color) -->
+    <path d="M44 78 L44 64 C44 60.7 46.7 58 50 58 C53.3 58 56 64 56 64 L56 78 Z" fill="#0f766e" />
+  </g>
+</svg>
