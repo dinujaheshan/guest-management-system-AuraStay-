@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import connectToDatabase from "@/lib/db";
 import { MenuItem } from "@/models/MenuItem";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   try {

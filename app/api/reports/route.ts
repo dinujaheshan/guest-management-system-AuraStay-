@@ -8,7 +8,7 @@ import { MenuItem } from "@/models/MenuItem";
 import { Invoice } from "@/models/Invoice";
 import { Payment } from "@/models/Payment";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 export async function GET(req: Request) {
   try {

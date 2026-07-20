@@ -4,7 +4,7 @@ import { Booking } from "@/models/Booking";
 import { Room } from "@/models/Room";
 import { Charge } from "@/models/Charge";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 export async function POST(req: Request) {
   try {
