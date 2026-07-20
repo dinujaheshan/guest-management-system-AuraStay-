@@ -43,21 +43,21 @@ export async function GET(req: Request) {
 
     // Find bookings that overlap with the next 7 days
     const upcomingBookings = await Booking.find({
-      checkIn: { $lt: next7Days },
-      checkOut: { $gt: now },
+      checkInDate: { $lt: next7Days },
+      checkOutDate: { $gt: now },
       status: { $in: ["Confirmed", "Checked In"] }
     });
 
     let bookedRoomNights = 0;
     upcomingBookings.forEach(booking => {
       // Calculate overlap days for this booking within the next 7 days window
-      const start = booking.checkIn > now ? booking.checkIn : now;
-      const end = booking.checkOut < next7Days ? booking.checkOut : next7Days;
+      const start = booking.checkInDate > now ? booking.checkInDate : now;
+      const end = booking.checkOutDate < next7Days ? booking.checkOutDate : next7Days;
       const overlapMs = end.getTime() - start.getTime();
       const overlapDays = Math.ceil(overlapMs / (1000 * 60 * 60 * 24));
       
       // Multiply by number of rooms in this booking
-      bookedRoomNights += (overlapDays * (booking.rooms?.length || 1));
+      bookedRoomNights += (overlapDays * (booking.roomIds?.length || 1));
     });
 
     const predictedOccupancyRate = potentialRoomNights > 0 
@@ -76,12 +76,12 @@ export async function GET(req: Request) {
     const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
 
     const checkInsToday = await Booking.countDocuments({
-      checkIn: { $gte: startOfToday, $lte: endOfToday },
+      checkInDate: { $gte: startOfToday, $lte: endOfToday },
       status: "Confirmed"
     });
 
     const checkOutsToday = await Booking.countDocuments({
-      checkOut: { $gte: startOfToday, $lte: endOfToday },
+      checkOutDate: { $gte: startOfToday, $lte: endOfToday },
       status: "Checked In"
     });
 
