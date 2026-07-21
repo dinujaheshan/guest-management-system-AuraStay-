@@ -711,6 +711,10 @@ export default function SettingsPage() {
                 <input value={businessSettings.businessName || ""} onChange={e => setBusinessSettings({...businessSettings, businessName: e.target.value})} className="w-full p-2 bg-background border border-input rounded-md" />
               </div>
               <div>
+                <label className="text-sm font-medium mb-1 block">Address</label>
+                <input value={businessSettings.address || ""} onChange={e => setBusinessSettings({...businessSettings, address: e.target.value})} className="w-full p-2 bg-background border border-input rounded-md" />
+              </div>
+              <div>
                 <label className="text-sm font-medium mb-1 block">Contact Phone</label>
                 <input value={businessSettings.phone || ""} onChange={e => setBusinessSettings({...businessSettings, phone: e.target.value})} className="w-full p-2 bg-background border border-input rounded-md" />
               </div>

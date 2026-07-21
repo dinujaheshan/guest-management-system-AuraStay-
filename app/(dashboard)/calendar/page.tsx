@@ -70,8 +70,8 @@ export default function CalendarPage() {
   // we can calculate the style (left, width) based on the date array index.
   
   const getBookingStyle = (booking: any, room: any) => {
-    const checkIn = new Date(booking.checkIn);
-    const checkOut = new Date(booking.checkOut);
+    const checkIn = new Date(booking.checkInDate);
+    const checkOut = new Date(booking.checkOutDate);
     
     // Normalize time to midnight for accurate day comparison
     checkIn.setHours(0,0,0,0);
@@ -158,7 +158,7 @@ export default function CalendarPage() {
             <div className="flex-1 overflow-y-auto custom-scrollbar relative">
               {rooms.sort((a,b) => (a.roomNumber || "").localeCompare(b.roomNumber || "")).map((room) => {
                 // Find bookings for this room
-                const roomBookings = bookings.filter(b => b.rooms?.some((r: any) => r.roomId === room._id || r === room._id));
+                const roomBookings = bookings.filter(b => b.roomIds?.some((r: any) => r._id === room._id || r === room._id));
 
                 return (
                   <div key={room._id} className="flex border-b border-border hover:bg-muted/10 transition-colors group">
@@ -183,14 +183,16 @@ export default function CalendarPage() {
                           const style = getBookingStyle(booking, room);
                           if (!style) return null;
 
+                          const guestName = booking.guestId ? `${booking.guestId.firstName} ${booking.guestId.lastName}` : 'Walk-in';
+
                           return (
                             <div 
                               key={booking._id} 
                               className={`absolute h-full rounded-md border text-white text-xs font-semibold p-1.5 overflow-hidden shadow-sm flex flex-col justify-center cursor-pointer transition-transform hover:scale-[1.02] hover:shadow-md z-10 ${style.bgColor}`}
                               style={{ left: style.left, width: style.width }}
-                              title={`Guest: ${booking.guest?.name || 'Unknown'}\nStatus: ${booking.status}`}
+                              title={`Guest: ${guestName}\nStatus: ${booking.status}`}
                             >
-                              <div className="truncate drop-shadow-md">{booking.guest?.name || 'Walk-in'}</div>
+                              <div className="truncate drop-shadow-md">{guestName}</div>
                               <div className="text-[9px] opacity-90 truncate drop-shadow-md">{booking.status}</div>
                             </div>
                           );

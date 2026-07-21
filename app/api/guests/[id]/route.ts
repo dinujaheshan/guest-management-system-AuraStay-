@@ -10,9 +10,9 @@ export const GET = apiHandler(async (req, { params }) => {
 }, { requireAuth: true });
 
 export const PUT = apiHandler(async (req, { params, body }) => {
-  if (body.idPassport && body.idPassport.trim() !== "") {
+  if (body.idPassportNumber && body.idPassportNumber.trim() !== "") {
     const existing = await Guest.findOne({ 
-      idPassport: body.idPassport,
+      idPassportNumber: body.idPassportNumber,
       _id: { $ne: params.id } 
     });
     if (existing) {
@@ -23,7 +23,7 @@ export const PUT = apiHandler(async (req, { params, body }) => {
   const guest = await Guest.findByIdAndUpdate(params.id, body, { new: true, runValidators: true });
   if (!guest) return NextResponse.json({ error: "Guest not found" }, { status: 404 });
   return NextResponse.json(guest);
-}, { requireAuth: true, schema: guestSchema });
+}, { requireAuth: true, schema: guestSchema.partial() });
 
 export const DELETE = apiHandler(async (req, { params }) => {
   const guest = await Guest.findByIdAndDelete(params.id);

@@ -10,6 +10,7 @@ const initialFormData = {
   price: 5.0,
   stockQuantity: 10,
   imageUrl: "",
+  isInventoryTracked: true,
 };
 
 export default function MenuPage() {
@@ -142,7 +143,7 @@ export default function MenuPage() {
         body: JSON.stringify({
           ...formData,
           price: Number(formData.price),
-          stockQuantity: Number(formData.stockQuantity),
+          stockQuantity: formData.isInventoryTracked ? Number(formData.stockQuantity) : 0,
           imageUrl: uploadedUrl,
         }),
       });
@@ -198,6 +199,7 @@ export default function MenuPage() {
       price: item.price,
       stockQuantity: item.stockQuantity,
       imageUrl: item.imageUrl || "",
+      isInventoryTracked: item.isInventoryTracked ?? true,
     });
     setImageFile(null);
     setShowForm(true);
@@ -282,11 +284,11 @@ export default function MenuPage() {
                 {filteredMenuItems.map((item) => (
                   <div 
                     key={item._id}
-                    onClick={() => item.stockQuantity > 0 && setSelectedItem(item)}
+                    onClick={() => (item.isInventoryTracked === false || item.stockQuantity > 0) && setSelectedItem(item)}
                     className={`p-4 rounded-xl border flex flex-col justify-between cursor-pointer transition-all select-none ${
                       selectedItem?._id === item._id 
                         ? "bg-primary border-primary text-primary-foreground shadow-md"
-                        : item.stockQuantity <= 0
+                        : (item.isInventoryTracked !== false && item.stockQuantity <= 0)
                         ? "bg-muted border-muted text-muted-foreground cursor-not-allowed opacity-50"
                         : "bg-background border-border hover:border-primary/50 text-foreground"
                     }`}
@@ -319,7 +321,9 @@ export default function MenuPage() {
                     </div>
                     <div className="flex justify-between items-end mt-4">
                       <span className="font-black text-sm">${item.price}</span>
-                      <span className="text-[10px] opacity-75 font-semibold">Stock: {item.stockQuantity}</span>
+                      <span className="text-[10px] opacity-75 font-semibold">
+                        {item.isInventoryTracked === false ? "Not Tracked" : `Stock: ${item.stockQuantity}`}
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -378,9 +382,13 @@ export default function MenuPage() {
                         type="number" 
                         required 
                         min="1" 
-                        max={selectedItem.stockQuantity}
+                        max={selectedItem.isInventoryTracked === false ? undefined : selectedItem.stockQuantity}
                         value={orderQty} 
-                        onChange={e => setOrderQty(Math.min(selectedItem.stockQuantity, Number(e.target.value)))}
+                        onChange={e => setOrderQty(
+                          selectedItem.isInventoryTracked === false 
+                            ? Number(e.target.value) 
+                            : Math.min(selectedItem.stockQuantity, Number(e.target.value))
+                        )}
                         className="w-full p-2 border border-input bg-background rounded-lg text-sm" 
                       />
                     </div>
@@ -480,13 +488,27 @@ export default function MenuPage() {
                   <input type="number" required min="0" step="0.01" value={formData.price} onChange={e => setFormData({...formData, price: Number(e.target.value)})} className="w-full p-2 bg-background border border-input rounded-md" />
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Stock Quantity</label>
-                  <input type="number" required min="0" value={formData.stockQuantity} onChange={e => setFormData({...formData, stockQuantity: Number(e.target.value)})} className="w-full p-2 bg-background border border-input rounded-md" />
-                </div>
-                <div>
                   <label className="text-sm font-medium mb-1 block">Item Image</label>
                   <input type="file" accept="image/*" onChange={e => e.target.files && setImageFile(e.target.files[0])} className="w-full p-1.5 bg-background border border-input rounded-md text-sm" />
                 </div>
+                <div className="flex items-center space-x-2 mt-4">
+                  <input 
+                    type="checkbox" 
+                    id="trackInventory" 
+                    checked={formData.isInventoryTracked}
+                    onChange={(e) => setFormData({...formData, isInventoryTracked: e.target.checked})}
+                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <label htmlFor="trackInventory" className="text-sm font-medium text-foreground">
+                    Track Inventory Stock
+                  </label>
+                </div>
+                {formData.isInventoryTracked && (
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Stock Quantity</label>
+                    <input type="number" required min="0" value={formData.stockQuantity} onChange={e => setFormData({...formData, stockQuantity: Number(e.target.value)})} className="w-full p-2 bg-background border border-input rounded-md" />
+                  </div>
+                )}
                 <div className="md:col-span-2 lg:col-span-4 flex justify-end mt-2">
                   <Button type="submit" disabled={uploadingImage} className="px-6 rounded-xl shadow-md h-10">
                     {uploadingImage ? "Uploading & Saving..." : editingId ? "Update Item" : "Save Item"}
@@ -520,21 +542,29 @@ export default function MenuPage() {
                       </td>
                       <td className="px-6 py-4 font-bold">${item.price}</td>
                       <td className="px-6 py-4">
-                        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
-                          item.stockQuantity <= 5 ? "bg-rose-500 text-white animate-pulse shadow-sm" : "bg-emerald-500/10 text-emerald-600"
-                        }`}>
-                          {item.stockQuantity} items {item.stockQuantity <= 5 && " (LOW STOCK)"}
-                        </span>
+                        {item.isInventoryTracked === false ? (
+                          <span className="px-2 py-0.5 rounded text-xs font-semibold bg-muted text-muted-foreground">
+                            Not Tracked
+                          </span>
+                        ) : (
+                          <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                            item.stockQuantity <= 5 ? "bg-rose-500 text-white animate-pulse shadow-sm" : "bg-emerald-500/10 text-emerald-600"
+                          }`}>
+                            {item.stockQuantity} items {item.stockQuantity <= 5 && " (LOW STOCK)"}
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-right whitespace-nowrap">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => setStockToUpdateId(item._id)} 
-                          className="mr-2 rounded-lg text-xs"
-                        >
-                          GRN Stock Add
-                        </Button>
+                        {item.isInventoryTracked !== false && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => setStockToUpdateId(item._id)} 
+                            className="mr-2 rounded-lg text-xs"
+                          >
+                            GRN Stock Add
+                          </Button>
+                        )}
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(item)} className="h-8 w-8 mr-1 text-muted-foreground hover:text-primary">
                           <MdEdit className="h-4 w-4" />
                         </Button>

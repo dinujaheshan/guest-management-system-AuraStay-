@@ -25,11 +25,17 @@ export async function POST(req: Request) {
       notes: body.notes
     });
 
-    const newAdvance = (booking.advancePayment || 0) + body.amount;
-    const paymentStatus = newAdvance >= booking.totalAmount ? "Paid" : "Partially Paid";
-
+    // We do NOT increment booking.advancePayment here. 
+    // advancePayment represents ONLY the initial deposit made at booking time.
+    // All other payments are tracked via the Payment model and summed up later.
+    
+    // However, we should still update the booking's payment status if fully paid
+    const payments = await Payment.find({ bookingId: booking._id, status: "Paid" });
+    const paymentsSum = payments.reduce((sum, p) => sum + p.amount, 0);
+    const totalPaid = (booking.advancePayment || 0) + paymentsSum;
+    
+    const paymentStatus = totalPaid >= booking.totalAmount ? "Paid" : "Partially Paid";
     await Booking.findByIdAndUpdate(booking._id, {
-      advancePayment: newAdvance,
       paymentStatus: paymentStatus
     });
 
@@ -42,7 +48,14 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   try {
     await connectToDatabase();
-    const payments = await Payment.find({}).populate("bookingId").sort({ createdAt: -1 });
+    
+    const { searchParams } = new URL(req.url);
+    const bookingId = searchParams.get("bookingId");
+    
+    const query: any = {};
+    if (bookingId) query.bookingId = bookingId;
+
+    const payments = await Payment.find(query).populate("bookingId").sort({ createdAt: -1 });
     return NextResponse.json(payments);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

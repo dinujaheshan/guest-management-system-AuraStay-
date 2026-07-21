@@ -29,7 +29,7 @@ export class InventoryService {
       throw new Error("Menu item not found");
     }
 
-    if (menuItem.stockQuantity < quantity) {
+    if (menuItem.isInventoryTracked !== false && menuItem.stockQuantity < quantity) {
       throw new Error(`Insufficient stock. Only ${menuItem.stockQuantity} remaining.`);
     }
 
@@ -38,17 +38,19 @@ export class InventoryService {
       throw new Error("Booking not found");
     }
 
-    // 1. Deduct Stock
-    menuItem.stockQuantity -= quantity;
-    await menuItem.save();
+    if (menuItem.isInventoryTracked !== false) {
+      // 1. Deduct Stock
+      menuItem.stockQuantity -= quantity;
+      await menuItem.save();
 
-    // 2. Log Stock Movement
-    await StockMovement.create({
-      productId: menuItem._id,
-      type: "out",
-      quantity,
-      reason: "sale"
-    });
+      // 2. Log Stock Movement
+      await StockMovement.create({
+        productId: menuItem._id,
+        type: "out",
+        quantity,
+        reason: "sale"
+      });
+    }
 
     // 3. Create FoodOrderItem (for Kitchen KOT)
     const foodChargeAmount = menuItem.price * quantity;

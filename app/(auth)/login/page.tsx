@@ -8,6 +8,7 @@ import { MdEmail, MdLock, MdLogin } from "react-icons/md";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo } from "@/components/ui/logo";
 import { motion } from "framer-motion";
+import { useSettings } from "@/components/settings-provider";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -15,6 +16,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { systemName, businessName, logo } = useSettings();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,9 +77,13 @@ export default function LoginPage() {
         <div className="absolute inset-0 rounded-3xl ring-1 ring-inset ring-white/10 pointer-events-none" />
 
         <motion.div variants={itemVariants} className="mb-8 text-center mt-2 flex flex-col items-center">
-          <Logo className="w-16 h-16 mb-4 drop-shadow-md" />
-          <h1 className="text-3xl font-black tracking-tight text-primary">AuraStay</h1>
-          <p className="text-muted-foreground mt-2 text-sm font-medium">Guest House Management System</p>
+          {logo ? (
+            <img src={logo} alt="Logo" className="h-16 w-auto mb-4 drop-shadow-md object-contain" />
+          ) : (
+            <Logo className="w-16 h-16 mb-4 drop-shadow-md" />
+          )}
+          <h1 className="text-3xl font-black tracking-tight text-primary">{systemName}</h1>
+          <p className="text-muted-foreground mt-2 text-sm font-medium">{businessName}</p>
         </motion.div>
 
         {error && (

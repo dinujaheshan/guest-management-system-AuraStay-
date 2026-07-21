@@ -298,9 +298,9 @@ export default function CheckoutPage() {
                         <span className="font-semibold">-${totalPayments}</span>
                       </div>
                       <div className="flex justify-between text-lg font-black border-t border-border pt-2">
-                        <span>Net Balance Due:</span>
+                        <span>{balanceDue < 0 ? "Refund Due:" : "Net Balance Due:"}</span>
                         <span className={balanceDue > 0 ? "text-rose-600" : "text-emerald-600"}>
-                          ${balanceDue}
+                          ${Math.abs(balanceDue).toFixed(2)}
                         </span>
                       </div>
                     </div>

@@ -6,6 +6,7 @@ export interface IMenuItem extends Document {
   price: number;
   stockQuantity: number;
   imageUrl?: string;
+  isInventoryTracked: boolean;
 }
 
 const MenuItemSchema = new mongoose.Schema<IMenuItem>(
@@ -15,6 +16,7 @@ const MenuItemSchema = new mongoose.Schema<IMenuItem>(
     price: { type: Number, required: true },
     stockQuantity: { type: Number, default: 0 },
     imageUrl: { type: String },
+    isInventoryTracked: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

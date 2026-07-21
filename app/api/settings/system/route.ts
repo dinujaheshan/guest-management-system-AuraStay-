@@ -16,4 +16,4 @@ export const POST = apiHandler(async (req, { body }) => {
     settings = await SystemSetting.create(body);
   }
   return NextResponse.json(settings);
-}, { requireAuth: true, requiredRole: ["super_admin", "admin"], schema: systemSettingSchema });
+}, { requireAuth: true, requiredRole: ["super_admin", "admin"], schema: systemSettingSchema.partial() });

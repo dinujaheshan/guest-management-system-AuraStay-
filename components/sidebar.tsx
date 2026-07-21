@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useSession } from "next-auth/react"
+import { useSettings } from "@/components/settings-provider"
 import { cn } from "@/lib/utils"
 import { 
   MdDashboard, 
@@ -44,6 +45,7 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname()
   const { data: session } = useSession()
+  const { systemName, logo } = useSettings()
 
   const user = session?.user as any
   const isSuperAdmin = user?.role === "super_admin"
@@ -52,9 +54,13 @@ export function Sidebar() {
   return (
     <div className="w-[280px] border-r border-border/50 bg-card/80 backdrop-blur-xl flex flex-col h-full shadow-[4px_0_24px_rgba(0,0,0,0.02)] hidden md:flex transition-all duration-300 relative z-20 print:hidden">
       <div className="h-20 flex items-center px-8 border-b border-border/50 z-10 gap-3">
-        <Logo className="w-8 h-8 drop-shadow-sm" />
-        <h1 className="text-2xl font-black tracking-tight text-primary">
-          AuraStay
+        {logo ? (
+          <img src={logo} alt="Logo" className="w-8 h-8 object-contain drop-shadow-sm" />
+        ) : (
+          <Logo className="w-8 h-8 drop-shadow-sm" />
+        )}
+        <h1 className="text-xl font-black tracking-tight text-primary truncate" title={systemName}>
+          {systemName}
         </h1>
       </div>
       <div className="flex-1 overflow-y-auto py-8 custom-scrollbar">
