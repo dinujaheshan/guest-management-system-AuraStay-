@@ -57,7 +57,7 @@ export const PUT = apiHandler(async (req, { params, body }) => {
   }
 
   return NextResponse.json(booking);
-}, { requireAuth: true, schema: bookingSchema });
+}, { requireAuth: true, schema: bookingSchema.partial() });
 
 export const DELETE = apiHandler(async (req, { params }) => {
   const booking = await Booking.findById(params.id);
