@@ -100,15 +100,45 @@ export default function BookingsPage() {
     }
   };
 
+  const isRoomUnavailable = (roomId: string) => {
+    if (!checkInDate || !checkOutDate) return false;
+    
+    const selCheckIn = new Date(checkInDate);
+    const selCheckOut = new Date(checkOutDate);
+    selCheckIn.setHours(0,0,0,0);
+    selCheckOut.setHours(0,0,0,0);
+
+    return bookings.some(b => {
+      if (editingId === b._id) return false;
+      if (["Cancelled", "No Show"].includes(b.status)) return false;
+      
+      const hasRoom = b.roomIds?.some((r: any) => r._id === roomId || r === roomId);
+      if (!hasRoom) return false;
+
+      const bCheckIn = new Date(b.checkInDate);
+      const bCheckOut = new Date(b.checkOutDate);
+      bCheckIn.setHours(0,0,0,0);
+      bCheckOut.setHours(0,0,0,0);
+
+      return selCheckIn < bCheckOut && selCheckOut > bCheckIn;
+    });
+  };
+
   const handlePackageChange = (pkgId: string) => {
     setPackageId(pkgId);
     if (!pkgId) return;
     
+    if (!checkInDate || !checkOutDate) {
+      alert("Please select Check-In and Check-Out dates first to check room availability.");
+      setPackageId("");
+      return;
+    }
+
     const selectedPkg = packages.find(p => p._id === pkgId);
     if (selectedPkg) {
       // Find matching rooms of the package type & category
       const matchingRooms = rooms.filter(
-        r => r.roomType === selectedPkg.roomType && r.category === selectedPkg.category && r.status === "Available"
+        r => r.roomType === selectedPkg.roomType && r.category === selectedPkg.category && !isRoomUnavailable(r._id)
       );
       
       if (matchingRooms.length > 0) {
@@ -117,7 +147,7 @@ export default function BookingsPage() {
         setSelectedRoomIds([firstRoom._id]);
         setRoomRates({ [firstRoom._id]: selectedPkg.pricePerNight });
       } else {
-        alert(`No available rooms found for package type: ${selectedPkg.roomType} (${selectedPkg.category})`);
+        alert(`No available rooms found for package type: ${selectedPkg.roomType} (${selectedPkg.category}) for the selected dates.`);
         setSelectedRoomIds([]);
         setRoomRates({});
       }
@@ -596,18 +626,22 @@ export default function BookingsPage() {
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                 {rooms.map((room) => {
                   const isSelected = selectedRoomIds.includes(room._id);
-                  const isOccupiedOrReserved = room.status !== "Available" && !selectedRoomIds.includes(room._id);
+                  const datesSelected = checkInDate && checkOutDate;
+                  const isOccupiedOrReserved = datesSelected ? (isRoomUnavailable(room._id) && !isSelected) : false;
                   
                   return (
                     <div 
                       key={room._id} 
-                      onClick={() => !isOccupiedOrReserved && handleRoomSelection(room._id, room.pricePerNight)}
-                      className={`p-3 rounded-xl border cursor-pointer select-none transition-all flex flex-col justify-between ${
-                        isSelected 
-                          ? "bg-primary border-primary text-primary-foreground shadow-md"
+                      onClick={() => datesSelected && !isOccupiedOrReserved && handleRoomSelection(room._id, room.pricePerNight)}
+                      title={!datesSelected ? "Select check-in/out dates first" : isOccupiedOrReserved ? "Room is unavailable for selected dates" : ""}
+                      className={`p-3 rounded-xl border select-none transition-all flex flex-col justify-between ${
+                        !datesSelected 
+                          ? "bg-muted border-muted text-muted-foreground cursor-not-allowed opacity-50"
+                          : isSelected 
+                          ? "bg-primary border-primary text-primary-foreground shadow-md cursor-pointer"
                           : isOccupiedOrReserved
                           ? "bg-muted border-muted text-muted-foreground cursor-not-allowed opacity-55"
-                          : "bg-background border-border hover:border-primary/50 text-foreground"
+                          : "bg-background border-border hover:border-primary/50 text-foreground cursor-pointer"
                       }`}
                     >
                       <div className="text-center font-bold text-lg">{room.roomNumber}</div>
