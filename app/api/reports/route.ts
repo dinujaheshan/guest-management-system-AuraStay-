@@ -7,6 +7,7 @@ import { Expense } from "@/models/Expense";
 import { MenuItem } from "@/models/MenuItem";
 import { Invoice } from "@/models/Invoice";
 import { Payment } from "@/models/Payment";
+import { FoodOrderItem } from "@/models/FoodOrderItem";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 
@@ -42,6 +43,9 @@ export async function GET(req: Request) {
     const roomRevenue = charges.filter(c => c.chargeType === "Room Charge").reduce((sum, c) => sum + c.amount, 0);
     const foodRevenue = charges.filter(c => c.chargeType === "Food").reduce((sum, c) => sum + c.amount, 0);
     const additionalRevenue = charges.filter(c => !["Room Charge", "Food"].includes(c.chargeType)).reduce((sum, c) => sum + c.amount, 0);
+    
+    const walkInPayments = payments.filter(p => p.notes === "Walk-in POS Order");
+    const walkInRevenue = walkInPayments.reduce((sum, p) => sum + p.amount, 0);
 
     // 3. Expenses Aggregation
     const expenses = await Expense.find({});
@@ -59,6 +63,9 @@ export async function GET(req: Request) {
 
     // 4. Low stock items
     const lowStockItems = await MenuItem.find({ stockQuantity: { $lt: 5 } }).sort({ stockQuantity: 1 });
+
+    // 5. Walk-in Items
+    const walkInItems = await FoodOrderItem.find({ bookingId: { $exists: false } }).sort({ createdAt: -1 });
 
     // Net Profit
     const netProfit = totalRevenue - totalExpenses;
@@ -81,10 +88,12 @@ export async function GET(req: Request) {
           rooms: roomRevenue,
           food: foodRevenue,
           additional: additionalRevenue,
+          walkIn: walkInRevenue,
         },
         expenseBreakdown,
       },
       lowStockItems,
+      walkInItems,
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

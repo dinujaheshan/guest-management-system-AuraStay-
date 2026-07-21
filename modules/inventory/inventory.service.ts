@@ -17,10 +17,10 @@ export class InventoryService {
     return await MenuItem.create(body);
   }
 
-  static async placeFoodOrder(bookingId: string, menuItemId: string, quantity: number, roomId?: string, payNow?: boolean, paymentMethod?: string) {
+  static async placeFoodOrder(bookingId: string | null, menuItemId: string, quantity: number, roomId?: string, payNow?: boolean, paymentMethod?: string) {
     await connectToDatabase();
     
-    if (!bookingId || !menuItemId || !quantity || quantity <= 0) {
+    if (!menuItemId || !quantity || quantity <= 0) {
       throw new Error("Missing or invalid parameters");
     }
 
@@ -33,9 +33,12 @@ export class InventoryService {
       throw new Error(`Insufficient stock. Only ${menuItem.stockQuantity} remaining.`);
     }
 
-    const booking = await Booking.findById(bookingId);
-    if (!booking) {
-      throw new Error("Booking not found");
+    let booking = null;
+    if (bookingId) {
+      booking = await Booking.findById(bookingId);
+      if (!booking) {
+        throw new Error("Booking not found");
+      }
     }
 
     if (menuItem.isInventoryTracked !== false) {
@@ -52,45 +55,70 @@ export class InventoryService {
       });
     }
 
-    // 3. Create FoodOrderItem (for Kitchen KOT)
     const foodChargeAmount = menuItem.price * quantity;
-    await FoodOrderItem.create({
-      bookingId: booking._id,
-      roomId,
+
+    // 3. Create FoodOrderItem (for Kitchen KOT)
+    const foodOrderItemData: any = {
       menuItemId: menuItem._id,
       itemName: menuItem.itemName,
       quantity,
       unitPrice: menuItem.price,
       totalPrice: foodChargeAmount,
       status: "pending"
-    });
+    };
+    if (booking) foodOrderItemData.bookingId = booking._id;
+    if (roomId) foodOrderItemData.roomId = roomId;
+    
+    await FoodOrderItem.create(foodOrderItemData);
 
-    // 4. Create Charge
-    const charge = await Charge.create({
-      bookingId: booking._id,
-      chargeType: "Food",
-      description: `POS Order - ${menuItem.itemName} (Qty: ${quantity} @ $${menuItem.price}/each)`,
-      amount: foodChargeAmount,
-      status: payNow ? "Paid" : "Pending",
-    });
-
-    if (payNow) {
-      await Payment.create({
+    let charge = null;
+    // 4. Create Charge if there is a booking
+    if (booking) {
+      charge = await Charge.create({
         bookingId: booking._id,
+        chargeType: "Food",
+        description: `POS Order - ${menuItem.itemName} (Qty: ${quantity} @ $${menuItem.price}/each)`,
         amount: foodChargeAmount,
-        paymentMethod: paymentMethod || "Cash",
-        notes: "POS Instant Payment",
+        status: payNow ? "Paid" : "Pending",
       });
     }
 
-    // 5. Update Booking total amount
-    booking.totalAmount = (booking.totalAmount || 0) + foodChargeAmount;
-    await booking.save();
+    let payment = null;
+    if (payNow) {
+      const paymentData: any = {
+        amount: foodChargeAmount,
+        paymentMethod: paymentMethod || "Cash",
+        notes: booking ? "POS Instant Payment" : "Walk-in POS Order",
+      };
+      if (booking) paymentData.bookingId = booking._id;
+      
+      payment = await Payment.create(paymentData);
+    }
+
+    // 5. Update Booking total amount if there is a booking
+    if (booking) {
+      booking.totalAmount = (booking.totalAmount || 0) + foodChargeAmount;
+      await booking.save();
+    }
 
     return {
-      message: "Food order placed successfully",
+      message: booking ? "Food order placed successfully" : "Walk-in food order placed successfully",
       charge,
       remainingStock: menuItem.stockQuantity,
+      receipt: {
+        orderType: booking ? "Room Order" : "Walk-in Order",
+        date: new Date(),
+        items: [{
+          itemName: menuItem.itemName,
+          quantity: quantity,
+          unitPrice: menuItem.price,
+          totalPrice: foodChargeAmount
+        }],
+        totalAmount: foodChargeAmount,
+        paymentStatus: payNow ? "Paid" : "Added to Room Bill",
+        paymentMethod: payNow ? (paymentMethod || "Cash") : "N/A",
+        roomDetails: booking ? `Room ${roomId || ""}` : undefined
+      }
     };
   }
 }

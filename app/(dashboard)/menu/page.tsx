@@ -33,6 +33,8 @@ export default function MenuPage() {
   const [orderQty, setOrderQty] = useState(1);
   const [payNow, setPayNow] = useState(false);
   const [posPayMethod, setPosPayMethod] = useState("Cash");
+  const [isWalkInOrder, setIsWalkInOrder] = useState(false);
+  const [receiptData, setReceiptData] = useState<any | null>(null);
 
   // Inventory/GRN State
   const [showForm, setShowForm] = useState(false);
@@ -73,7 +75,7 @@ export default function MenuPage() {
 
   const handlePOSOrderSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedStayId) return alert("Please select a Room / Stay");
+    if (!isWalkInOrder && !selectedStayId) return alert("Please select a Room / Stay");
     if (!selectedItem) return alert("Please select a Menu Item");
     if (orderQty <= 0) return alert("Quantity must be greater than 0");
 
@@ -82,22 +84,28 @@ export default function MenuPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          bookingId: selectedStayId,
+          bookingId: isWalkInOrder ? null : selectedStayId,
           menuItemId: selectedItem._id,
           quantity: Number(orderQty),
-          payNow,
-          paymentMethod: payNow ? posPayMethod : undefined,
+          payNow: isWalkInOrder ? true : payNow,
+          paymentMethod: (isWalkInOrder || payNow) ? posPayMethod : undefined,
         }),
       });
 
+      const data = await res.json();
+
       if (res.ok) {
-        alert("Food order placed successfully! Added to stay folio.");
+        if (data.receipt) {
+          setReceiptData(data.receipt);
+        } else {
+          alert(isWalkInOrder ? "Walk-in food order placed successfully!" : "Food order placed successfully! Added to stay folio.");
+        }
         setSelectedItem(null);
         setOrderQty(1);
+        if (isWalkInOrder) setIsWalkInOrder(false);
         fetchData();
       } else {
-        const error = await res.json();
-        alert(error.error || "Failed to place order");
+        alert(data.error || "Failed to place order");
       }
     } catch (e) {
       console.error(e);
@@ -340,24 +348,43 @@ export default function MenuPage() {
               </h3>
               
               <form onSubmit={handlePOSOrderSubmit} className="space-y-6">
-                {/* Select Stay */}
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Active Guest Room Stay *</label>
-                  <select 
-                    required 
-                    value={selectedStayId} 
-                    onChange={e => setSelectedStayId(e.target.value)} 
-                    className="w-full p-2.5 bg-background border border-input rounded-xl"
-                  >
-                    <option value="">-- Select Room --</option>
-                    {activeStays.map((stay) => (
-                      <option key={stay._id} value={stay._id}>
-                        Room {stay.roomIds?.map((r: any) => r.roomNumber).join(", ")} - {stay.guestId?.firstName} {stay.guestId?.lastName}
-                      </option>
-                    ))}
-                    {activeStays.length === 0 && <option value="" disabled>No Checked-In stays found</option>}
-                  </select>
+                {/* Walk-in Order Toggle */}
+                <div className="flex items-center space-x-2 bg-muted/30 p-3 rounded-xl border border-border">
+                  <input 
+                    type="checkbox" 
+                    id="walkInOrder" 
+                    checked={isWalkInOrder}
+                    onChange={(e) => {
+                      setIsWalkInOrder(e.target.checked);
+                      if (e.target.checked) setPayNow(true);
+                    }}
+                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <label htmlFor="walkInOrder" className="text-sm font-bold text-foreground cursor-pointer select-none flex-1">
+                    Walk-in Order (No Room/Booking)
+                  </label>
                 </div>
+
+                {/* Select Stay */}
+                {!isWalkInOrder && (
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Active Guest Room Stay *</label>
+                    <select 
+                      required={!isWalkInOrder}
+                      value={selectedStayId} 
+                      onChange={e => setSelectedStayId(e.target.value)} 
+                      className="w-full p-2.5 bg-background border border-input rounded-xl"
+                    >
+                      <option value="">-- Select Room --</option>
+                      {activeStays.map((stay) => (
+                        <option key={stay._id} value={stay._id}>
+                          Room {stay.roomIds?.map((r: any) => r.roomNumber).join(", ")} - {stay.guestId?.firstName} {stay.guestId?.lastName}
+                        </option>
+                      ))}
+                      {activeStays.length === 0 && <option value="" disabled>No Checked-In stays found</option>}
+                    </select>
+                  </div>
+                )}
 
                 {/* Selected Item details */}
                 {selectedItem ? (
@@ -401,7 +428,7 @@ export default function MenuPage() {
                     <div className="pt-4 border-t border-border/50">
                       <label className="text-xs font-semibold text-muted-foreground uppercase block mb-2">Payment Option</label>
                       <div className="grid grid-cols-2 gap-2">
-                        {systemSettings.allowPosRoomCharges !== false && (
+                        {systemSettings.allowPosRoomCharges !== false && !isWalkInOrder && (
                           <button 
                             type="button" 
                             onClick={() => setPayNow(false)} 
@@ -413,7 +440,7 @@ export default function MenuPage() {
                         <button 
                           type="button" 
                           onClick={() => setPayNow(true)} 
-                          className={`p-2 rounded-lg border text-sm font-semibold transition-all ${payNow ? "bg-emerald-600 text-white border-emerald-600" : "bg-background border-border text-muted-foreground hover:border-emerald-600/50"} ${systemSettings.allowPosRoomCharges === false ? 'col-span-2' : ''}`}
+                          className={`p-2 rounded-lg border text-sm font-semibold transition-all ${payNow ? "bg-emerald-600 text-white border-emerald-600" : "bg-background border-border text-muted-foreground hover:border-emerald-600/50"} ${systemSettings.allowPosRoomCharges === false || isWalkInOrder ? 'col-span-2' : ''}`}
                         >
                           Pay Immediately
                         </button>
@@ -444,7 +471,7 @@ export default function MenuPage() {
 
                 <Button 
                   type="submit" 
-                  disabled={!selectedItem || !selectedStayId} 
+                  disabled={!selectedItem || (!isWalkInOrder && !selectedStayId)} 
                   className="w-full h-12 text-base font-bold rounded-xl shadow-md"
                 >
                   Confirm POS Order
@@ -620,6 +647,105 @@ export default function MenuPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Receipt Modal */}
+      {receiptData && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 print:bg-white print:p-0 print:block">
+          <div className="w-full max-w-sm bg-white rounded-2xl border border-border shadow-2xl p-6 text-black print:shadow-none print:border-none print:rounded-none">
+            <div className="receipt-content text-center font-mono text-sm space-y-4">
+              <div className="font-bold text-lg border-b border-dashed border-gray-400 pb-2">
+                {systemSettings.logoUrl && (
+                  <img src={systemSettings.logoUrl} alt="Logo" className="h-12 mx-auto mb-2 object-contain" />
+                )}
+                {systemSettings.businessName || "Sakura Hotel"}
+                {systemSettings.address && (
+                  <div className="text-xs font-normal mt-1 text-gray-700 whitespace-pre-wrap">{systemSettings.address}</div>
+                )}
+                {systemSettings.invoiceHeaderText && (
+                  <div className="text-[10px] font-normal mt-1 text-gray-500">{systemSettings.invoiceHeaderText}</div>
+                )}
+                <div className="mt-2 text-xs font-normal text-gray-600">POS RECEIPT</div>
+              </div>
+              
+              <div className="text-left text-xs space-y-1">
+                <p><strong>Date:</strong> {new Date(receiptData.date).toLocaleString()}</p>
+                <p><strong>Order Type:</strong> {receiptData.orderType}</p>
+                {receiptData.roomDetails && <p><strong>Room:</strong> {receiptData.roomDetails}</p>}
+              </div>
+              
+              <div className="border-t border-b border-dashed border-gray-400 py-2 my-2 text-left">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-dashed border-gray-300">
+                      <th className="text-left pb-1">Item</th>
+                      <th className="text-center pb-1">Qty</th>
+                      <th className="text-right pb-1">Price</th>
+                      <th className="text-right pb-1">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {receiptData.items.map((item: any, i: number) => (
+                      <tr key={i}>
+                        <td className="py-1">{item.itemName}</td>
+                        <td className="text-center py-1">{item.quantity}</td>
+                        <td className="text-right py-1">${item.unitPrice.toFixed(2)}</td>
+                        <td className="text-right py-1 font-bold">${item.totalPrice.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              <div className="flex justify-between font-bold text-base pt-2">
+                <span>TOTAL</span>
+                <span>${receiptData.totalAmount.toFixed(2)}</span>
+              </div>
+              
+              <div className="text-left text-xs space-y-1 pt-2">
+                <p><strong>Status:</strong> {receiptData.paymentStatus}</p>
+                <p><strong>Method:</strong> {receiptData.paymentMethod}</p>
+              </div>
+              
+              <div className="text-xs pt-4 border-t border-dashed border-gray-400 mt-4 text-center text-gray-500">
+                {systemSettings.invoiceFooterText ? (
+                  <span className="whitespace-pre-wrap">{systemSettings.invoiceFooterText}</span>
+                ) : (
+                  "Thank you for your business!"
+                )}
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-2 print:hidden">
+              <Button variant="outline" className="flex-1" onClick={() => setReceiptData(null)}>
+                Close
+              </Button>
+              <Button className="flex-1 font-bold" onClick={() => window.print()}>
+                Print Receipt
+              </Button>
+            </div>
+          </div>
+          
+          <style jsx global>{`
+            @media print {
+              body * {
+                visibility: hidden;
+              }
+              .receipt-content, .receipt-content * {
+                visibility: visible;
+              }
+              .receipt-content {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 10px;
+              }
+              @page { margin: 0; }
+            }
+          `}</style>
         </div>
       )}
     </div>

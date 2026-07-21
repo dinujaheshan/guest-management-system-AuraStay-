@@ -73,7 +73,7 @@ export default function ReportsPage() {
     return <div className="flex h-[400px] items-center justify-center text-muted-foreground">Loading Analytics & Reports...</div>;
   }
 
-  const { finance, rooms, lowStockItems } = reportData || {};
+  const { finance, rooms, lowStockItems, walkInItems = [] } = reportData || {};
 
   const PrintHeader = ({ title }: { title: string }) => (
     <div className="hidden print:flex flex-col items-center justify-center mb-8 pb-6 border-b-2 border-slate-200">
@@ -182,7 +182,7 @@ export default function ReportsPage() {
                 <h4 className="text-xs uppercase font-bold text-muted-foreground">Revenue Splits</h4>
                 <div className="space-y-2 text-xs">
                   {(() => {
-                    const totalCharges = finance.breakdown.rooms + finance.breakdown.food + finance.breakdown.additional;
+                    const totalCharges = finance.breakdown.rooms + finance.breakdown.food + finance.breakdown.additional + (finance.breakdown.walkIn || 0);
                     return (
                       <>
                         <div>
@@ -190,8 +190,12 @@ export default function ReportsPage() {
                           <div className="w-full bg-muted h-2 rounded-full overflow-hidden"><div className="bg-primary h-full rounded-full" style={{ width: `${totalCharges > 0 ? (finance.breakdown.rooms / totalCharges) * 100 : 0}%` }} /></div>
                         </div>
                         <div>
-                          <div className="flex justify-between font-semibold mb-1"><span>Food Orders (POS)</span><span>${finance.breakdown.food.toFixed(2)}</span></div>
+                          <div className="flex justify-between font-semibold mb-1"><span>Room Food Orders</span><span>${finance.breakdown.food.toFixed(2)}</span></div>
                           <div className="w-full bg-muted h-2 rounded-full overflow-hidden"><div className="bg-purple-500 h-full rounded-full" style={{ width: `${totalCharges > 0 ? (finance.breakdown.food / totalCharges) * 100 : 0}%` }} /></div>
+                        </div>
+                        <div>
+                          <div className="flex justify-between font-semibold mb-1"><span>Walk-in POS Sales</span><span>${(finance.breakdown.walkIn || 0).toFixed(2)}</span></div>
+                          <div className="w-full bg-muted h-2 rounded-full overflow-hidden"><div className="bg-indigo-500 h-full rounded-full" style={{ width: `${totalCharges > 0 ? ((finance.breakdown.walkIn || 0) / totalCharges) * 100 : 0}%` }} /></div>
                         </div>
                       </>
                     );
@@ -340,10 +344,10 @@ export default function ReportsPage() {
     return (
       <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden print:border-none print:shadow-none print:bg-transparent">
         <div className="p-6 border-b border-border print:hidden">
-          <h3 className="font-semibold text-lg flex items-center gap-2"><MdRestaurantMenu className="text-purple-500" /> Food & Beverage Sales</h3>
-          <p className="text-sm text-muted-foreground">Log of all food items sold to guest folios.</p>
+          <h3 className="font-semibold text-lg flex items-center gap-2"><MdRestaurantMenu className="text-purple-500" /> Room Food Sales</h3>
+          <p className="text-sm text-muted-foreground">Log of all food items sold and billed to guest room folios.</p>
         </div>
-        <PrintHeader title="Food & Beverage Sales Report" />
+        <PrintHeader title="Room Food Sales Report" />
         <table className="w-full text-sm text-left print:text-xs">
           <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b border-border print:bg-slate-100 print:text-slate-800">
             <tr>
@@ -362,6 +366,43 @@ export default function ReportsPage() {
                 <td className="px-6 py-4 font-bold text-right text-emerald-600">${c.amount.toFixed(2)}</td>
               </tr>
             ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  const renderWalkInSales = () => {
+    return (
+      <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden print:border-none print:shadow-none print:bg-transparent">
+        <div className="p-6 border-b border-border print:hidden">
+          <h3 className="font-semibold text-lg flex items-center gap-2"><MdRestaurantMenu className="text-indigo-500" /> Walk-in POS Sales</h3>
+          <p className="text-sm text-muted-foreground">Log of all food items sold to walk-in customers.</p>
+        </div>
+        <PrintHeader title="Walk-in POS Sales Report" />
+        <table className="w-full text-sm text-left print:text-xs">
+          <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b border-border print:bg-slate-100 print:text-slate-800">
+            <tr>
+              <th className="px-6 py-4 font-semibold">Date</th>
+              <th className="px-6 py-4 font-semibold">Item Name</th>
+              <th className="px-6 py-4 font-semibold text-center">Qty</th>
+              <th className="px-6 py-4 font-semibold text-right">Total Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            {walkInItems?.map((item: any) => (
+              <tr key={item._id} className="border-b border-border last:border-0 hover:bg-muted/30">
+                <td className="px-6 py-4 whitespace-nowrap">{formatDate(item.createdAt)}</td>
+                <td className="px-6 py-4 font-medium">{item.itemName}</td>
+                <td className="px-6 py-4 font-bold text-center">{item.quantity}</td>
+                <td className="px-6 py-4 font-bold text-right text-emerald-600">${item.totalPrice.toFixed(2)}</td>
+              </tr>
+            ))}
+            {(!walkInItems || walkInItems.length === 0) && (
+              <tr>
+                <td colSpan={4} className="px-6 py-8 text-center text-muted-foreground">No walk-in sales recorded yet.</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -539,7 +580,7 @@ export default function ReportsPage() {
       <div className="flex space-x-1 bg-muted p-1 rounded-xl w-full overflow-x-auto print:hidden shadow-sm border border-border pb-1">
         {[
           "Overview", "Check-ins", "Check-outs", "Guests", 
-          "Payments", "Invoices", "Expenses", "Food Sales", 
+          "Payments", "Invoices", "Expenses", "Food Sales", "Walk-in Sales",
           "Additional Charges", "Inventory"
         ].map((tab) => (
           <button
@@ -566,6 +607,7 @@ export default function ReportsPage() {
         {activeTab === "Invoices" && renderInvoices()}
         {activeTab === "Expenses" && renderExpenses()}
         {activeTab === "Food Sales" && renderFoodSales()}
+        {activeTab === "Walk-in Sales" && renderWalkInSales()}
         {activeTab === "Additional Charges" && renderAdditionalCharges()}
         {activeTab === "Inventory" && renderInventory()}
       </div>

@@ -62,6 +62,13 @@ export default async function DashboardPage() {
     { name: "Check-Outs", value: checkOutsToday }
   ];
 
+  // 3. Walk-in Sales Today
+  const walkInPaymentsToday = await Payment.aggregate([
+    { $match: { date: { $gte: startToday, $lte: endToday }, notes: "Walk-in POS Order" } },
+    { $group: { _id: null, total: { $sum: "$amount" } } }
+  ]);
+  const walkInSalesToday = walkInPaymentsToday.length > 0 ? walkInPaymentsToday[0].total : 0;
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
@@ -69,7 +76,7 @@ export default async function DashboardPage() {
         <p className="text-muted-foreground mt-1 text-sm">Monitor your guest house operations and performance metrics.</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
         <StatCard 
           title="Total Rooms" 
           value={totalRooms.toString()} 
@@ -101,6 +108,14 @@ export default async function DashboardPage() {
           trend="Registered Staff" 
           color="text-purple-500"
           bg="bg-purple-500/10"
+        />
+        <StatCard 
+          title="Walk-in Sales (Today)" 
+          value={`$${walkInSalesToday.toFixed(2)}`}
+          icon={MdAttachMoney} 
+          trend="POS Revenue" 
+          color="text-indigo-500"
+          bg="bg-indigo-500/10"
         />
       </div>
 
