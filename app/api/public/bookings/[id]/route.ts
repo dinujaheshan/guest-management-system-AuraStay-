@@ -13,11 +13,7 @@ export async function GET(
   try {
     await connectToDatabase();
 
-    // Explicitly reference models to register them in Mongoose schemas (prevents SchemaNotFound errors)
-    const _g = Guest;
-    const _r = Room;
-    const _rp = RoomPackage;
-    const _p = Payment;
+    // Models are explicitly used in populate
 
     const bookingId = params.id;
     if (!bookingId) {
@@ -25,9 +21,9 @@ export async function GET(
     }
 
     const booking = await Booking.findById(bookingId)
-      .populate("guestId")
-      .populate("roomIds")
-      .populate("packageId");
+      .populate({ path: "guestId", model: Guest })
+      .populate({ path: "roomIds", model: Room })
+      .populate({ path: "packageId", model: RoomPackage });
 
     if (!booking) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });

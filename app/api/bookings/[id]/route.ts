@@ -3,12 +3,14 @@ import { apiHandler } from "@/lib/api-handler";
 import { bookingSchema } from "@/lib/validations";
 import { Booking } from "@/models/Booking";
 import { Room } from "@/models/Room";
+import { Guest } from "@/models/Guest";
+import { RoomPackage } from "@/models/RoomPackage";
 
 export const GET = apiHandler(async (req, { params }) => {
   const booking = await Booking.findById(params.id)
-    .populate("guestId")
-    .populate("roomIds")
-    .populate("packageId");
+    .populate({ path: "guestId", model: Guest })
+    .populate({ path: "roomIds", model: Room })
+    .populate({ path: "packageId", model: RoomPackage });
 
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
   return NextResponse.json(booking);

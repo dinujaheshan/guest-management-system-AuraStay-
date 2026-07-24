@@ -8,15 +8,12 @@ import connectToDatabase from "@/lib/db";
 export class BookingService {
   static async getAllBookings() {
     await connectToDatabase();
-    // Explicitly load models
-    const _g = Guest;
-    const _r = Room;
-    const _rp = RoomPackage;
+    // Models are explicitly used in populate
 
     return await Booking.find({})
-      .populate("guestId")
-      .populate("roomIds")
-      .populate("packageId")
+      .populate({ path: "guestId", model: Guest })
+      .populate({ path: "roomIds", model: Room })
+      .populate({ path: "packageId", model: RoomPackage })
       .sort({ createdAt: -1 });
   }
 

@@ -22,20 +22,20 @@ export default async function InvoicePage({ params }: { params: { id: string } }
   // If id is not a valid ObjectId, this might throw, so we catch it
   let invoice;
   try {
-    invoice = await Invoice.findById(invoiceId).populate("bookingId").populate("guestId").lean();
+    invoice = await Invoice.findById(invoiceId).populate({ path: "bookingId", model: Booking }).populate({ path: "guestId", model: Guest }).lean();
     if (!invoice) {
       // Maybe it was searched by bookingId? 
-      invoice = await Invoice.findOne({ bookingId: invoiceId }).populate("bookingId").populate("guestId").lean();
+      invoice = await Invoice.findOne({ bookingId: invoiceId }).populate({ path: "bookingId", model: Booking }).populate({ path: "guestId", model: Guest }).lean();
     }
   } catch (e) {
-    invoice = await Invoice.findOne({ invoiceNumber: invoiceId }).populate("bookingId").populate("guestId").lean();
+    invoice = await Invoice.findOne({ invoiceNumber: invoiceId }).populate({ path: "bookingId", model: Booking }).populate({ path: "guestId", model: Guest }).lean();
   }
 
   if (!invoice) {
     return notFound();
   }
 
-  const booking: any = await Booking.findById(invoice.bookingId).populate("roomIds").lean();
+  const booking: any = await Booking.findById(invoice.bookingId).populate({ path: "roomIds", model: Room }).lean();
   const guest: any = await Guest.findById(invoice.guestId).lean();
   const business: any = await BusinessSetting.findOne().lean();
   const charges: any[] = await Charge.find({ bookingId: invoice.bookingId }).lean();
