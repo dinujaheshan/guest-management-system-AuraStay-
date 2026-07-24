@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+export const dynamic = "force-dynamic";
 import { apiHandler } from "@/lib/api-handler";
 import { bookingSchema } from "@/lib/validations";
 import { BookingService } from "@/modules/booking/booking.service";

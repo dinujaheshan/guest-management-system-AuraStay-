@@ -1,6 +1,12 @@
 import mongoose from "mongoose";
 import dns from "dns";
 
+// Import core models to register them globally in serverless instances
+import "@/models/Guest";
+import "@/models/Room";
+import "@/models/RoomPackage";
+import "@/models/Booking";
+
 // Fix querySrv ETIMEOUT by overriding local DNS resolver with reliable public DNS servers
 try {
   dns.setServers(["8.8.8.8", "1.1.1.1"]);
