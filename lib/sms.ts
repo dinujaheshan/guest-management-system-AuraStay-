@@ -54,7 +54,7 @@ export async function sendSMS(to: string, message: string): Promise<boolean> {
     url.searchParams.append("message", message);
 
     const response = await fetch(url.toString(), {
-      method: "POST",
+      method: "GET",
     });
 
     const data = await response.json();
