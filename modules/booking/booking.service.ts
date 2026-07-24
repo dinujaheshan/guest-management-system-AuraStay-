@@ -39,7 +39,9 @@ export class BookingService {
       const guest = await Guest.findById(booking.guestId);
       if (guest && guest.phone) {
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-        const message = `Hi ${guest.firstName}, your booking status is ${booking.status}! View details & payments here: ${appUrl}/public/bookings/${booking._id}`;
+        const checkIn = new Date(booking.checkInDate).toLocaleDateString();
+        const checkOut = new Date(booking.checkOutDate).toLocaleDateString();
+        const message = `Hi ${guest.firstName}, your booking is ${booking.status}. Check-in: ${checkIn}, Check-out: ${checkOut}. View details & payments: ${appUrl}/public/bookings/${booking._id}`;
         await sendSMS(guest.phone, message);
       }
     } catch (smsError) {
