@@ -153,7 +153,7 @@ export default function PublicBookingPage() {
   }
 
   const { booking, payments, businessSettings } = bookingData;
-  const guestName = `${booking.guestId.firstName} ${booking.guestId.lastName}`;
+  const guestName = booking.guestId ? `${booking.guestId.firstName} ${booking.guestId.lastName}` : "Guest";
 
   // Date Formatting helper
   const formatDate = (dateStr: string) => {
