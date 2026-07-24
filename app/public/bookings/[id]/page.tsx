@@ -68,6 +68,13 @@ interface IPayment {
   date: string;
 }
 
+interface IBusinessSetting {
+  businessName: string;
+  logo?: string;
+  checkInTime: string;
+  checkOutTime: string;
+}
+
 // Geometric Premium Hotel SVG Logo Component
 const HotelLogo = () => (
   <svg className="w-9 h-9 transition-transform duration-300 hover:rotate-6" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -82,7 +89,7 @@ export default function PublicBookingPage() {
   const { id } = useParams();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const [bookingData, setBookingData] = useState<{ booking: IBooking; payments: IPayment[] } | null>(null);
+  const [bookingData, setBookingData] = useState<{ booking: IBooking; payments: IPayment[]; businessSettings: IBusinessSetting } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -120,7 +127,7 @@ export default function PublicBookingPage() {
           <div className="w-16 h-16 border-4 border-teal-500/20 border-t-teal-500 rounded-full animate-spin"></div>
           <HotelLogo />
         </div>
-        <p className="text-slate-500 dark:text-slate-400 font-medium animate-pulse">Loading secure guest portal...</p>
+        <p className="text-slate-500 dark:text-slate-400 font-medium animate-pulse">Loading guest details...</p>
       </div>
     );
   }
@@ -145,7 +152,7 @@ export default function PublicBookingPage() {
     );
   }
 
-  const { booking, payments } = bookingData;
+  const { booking, payments, businessSettings } = bookingData;
   const guestName = `${booking.guestId.firstName} ${booking.guestId.lastName}`;
 
   // Date Formatting helper
@@ -186,13 +193,14 @@ export default function PublicBookingPage() {
       {/* Navigation bar */}
       <nav className="relative max-w-6xl mx-auto px-6 py-5 flex justify-between items-center border-b border-slate-200 dark:border-slate-900 z-10">
         <div className="flex items-center gap-3">
-          <HotelLogo />
+          {businessSettings.logo ? (
+            <img src={businessSettings.logo} alt={businessSettings.businessName} className="h-9 object-contain" />
+          ) : (
+            <HotelLogo />
+          )}
           <div>
             <span className="font-extrabold text-2xl tracking-tight bg-gradient-to-r from-teal-600 to-emerald-500 bg-clip-text text-transparent dark:from-teal-400 dark:to-emerald-400">
-              GHRMS
-            </span>
-            <span className="text-[10px] block text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest -mt-1.5">
-              Premium Residence
+              {businessSettings.businessName}
             </span>
           </div>
         </div>
@@ -240,7 +248,7 @@ export default function PublicBookingPage() {
               <div className="absolute bottom-6 left-6 md:left-8 flex flex-col gap-1.5">
                 <div className="px-3.5 py-1 bg-amber-500/20 backdrop-blur-md border border-amber-500/30 text-amber-300 text-xs font-bold uppercase tracking-wider rounded-lg w-max flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
-                  Premium Guest Portal
+                  Booking Overview
                 </div>
                 <h1 className="text-2xl md:text-4xl font-black text-white tracking-tight drop-shadow-sm mt-1">
                   Welcome, {guestName}
@@ -297,7 +305,7 @@ export default function PublicBookingPage() {
                     </span>
                     <span className="text-base font-extrabold text-slate-950 dark:text-white">{formatDate(booking.checkInDate)}</span>
                     <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-1.5 font-medium">
-                      Check-in starts 2:00 PM
+                      Check-in starts {businessSettings.checkInTime}
                     </span>
                   </div>
 
@@ -307,7 +315,7 @@ export default function PublicBookingPage() {
                     </span>
                     <span className="text-base font-extrabold text-slate-950 dark:text-white">{formatDate(booking.checkOutDate)}</span>
                     <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-1.5 font-medium">
-                      Check-out before 11:00 AM
+                      Check-out before {businessSettings.checkOutTime}
                     </span>
                   </div>
                 </div>

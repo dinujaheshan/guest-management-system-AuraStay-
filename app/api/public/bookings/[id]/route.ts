@@ -35,9 +35,19 @@ export async function GET(
 
     const payments = await Payment.find({ bookingId }).sort({ date: 1 });
 
+    const { BusinessSetting } = await import("@/models/BusinessSetting");
+    const businessSettings = await BusinessSetting.findOne() || {
+      businessName: "My Guest House",
+      logo: "",
+      checkInTime: "14:00",
+      checkOutTime: "11:00",
+      invoiceFooterText: "Thank you for your stay!"
+    };
+
     return NextResponse.json({
       booking,
       payments,
+      businessSettings,
     });
   } catch (error: any) {
     console.error("Public API Error:", error);
